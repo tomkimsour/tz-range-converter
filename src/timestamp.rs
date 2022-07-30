@@ -13,6 +13,10 @@ pub mod converter {
         fn new()->Timestamp {
             Timestamp { minutes: "".to_string(), hours: "".to_string(), meridiem: "".to_string() }
         }    
+
+        pub fn is_empty(&self)->bool{
+            self.minutes.is_empty() && self.hours.is_empty()
+        }
     }
 
     #[derive(Debug)]
@@ -47,7 +51,7 @@ pub mod converter {
 
         let mut parsed = Vec::new();  
 
-        for time in times.iter().take(2) {
+        for time in times.iter().take(times.len()-1) {
             let caps : Captures = re.captures(time.as_str()).unwrap();
             let timestamp :Timestamp = capture_to_timestamp(caps);
             parsed.push(timestamp);
@@ -55,7 +59,11 @@ pub mod converter {
 
         let mut res = TimestampRange::new();
         res.start = parsed[0].clone();
-        res.end = parsed[1].clone();
+        if times.len() > 2 {
+            res.end = parsed[1].clone();
+        } else {
+            res.end = Timestamp::new();
+        }
         res
     }
 }
