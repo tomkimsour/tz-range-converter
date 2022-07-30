@@ -4,64 +4,31 @@
     clippy::too_many_arguments,
     clippy::unnecessary_wraps
 )]
-// use chrono::{DateTime, FixedOffset, Local, Utc};
-// use std::{env,vec,string};
 
+extern crate chrono;
+extern crate chrono_tz;
 
-pub mod converter {
-    use regex::Regex;
-    use regex::Captures;
-
-    #[derive(Debug)]
-    pub struct Timestamp {
-        minutes:String, 
-        hours:String,
-        meridiem:String,
-    }
-
-    impl Timestamp {
-        fn new()->Timestamp {
-            Timestamp { minutes: "".to_string(), hours: "".to_string(), meridiem: "".to_string() }
-        }    
-    }
-
-    #[derive(Debug)]
-    pub struct TimestampRange {
-        pub list: Vec<Timestamp >,
-    }
-
-    impl TimestampRange {
-        fn new()->TimestampRange {
-            TimestampRange {
-                list: vec![],
-            }
-        } 
-    }
-
-    pub fn parse_time_range(times : Vec<String>) -> TimestampRange{
-
-        let re = Regex::new(r"(\d{1,2})[:h]?(am|pm)?(\d{2})?(am|pm)?").unwrap();
-
-        let mut res = TimestampRange::new();  
-
-        for time in times{
-            let cap : Captures = re.captures(time.as_str()).unwrap();
-            let timestamp_tuple = (cap.get(1), cap.get(2).or_else( || cap.get(4)), cap.get(3));
-            let timestamp : Option<Timestamp>= match timestamp_tuple{
-                (Some(hours), Some(meridiem), Some(minutes)) => Some(Timestamp {
-                    hours: hours.as_str().to_string(),
-                    meridiem: meridiem.as_str().to_string(),
-                    minutes: minutes.as_str().to_string(),
-                }),
-                _ => None,
-            };
-            res.list.push(timestamp.unwrap());
-        }
-        res
-    }
-}
+mod timestamp;
 
 use std::vec;
+use chrono::{TimeZone,prelude::*};
+use chrono_tz::Tz;
+use timestamp::converter::{Timestamp,TimestampRange};
+
+fn timestamp_to_local(timestamp : Timestamp, tz : Tz) -> DateTime<Local>{
+    let local_dt: DateTime<Local> = Local::now();
+
+    let mut hours = timestamp.hours.parse().unwrap();
+    let mut minutes : u32 = 0;
+    if !timestamp.minutes.is_empty(){
+        minutes = timestamp.minutes.parse().unwrap();
+    }
+    if timestamp.meridiem == "pm"{
+        hours += 12;
+    }
+    let received_dt: DateTime<Tz>= tz.ymd(local_dt.year(), local_dt.month(), local_dt.day()).and_hms(hours, minutes, 0);
+    received_dt.with_timezone(&local_dt.timezone())
+}
 
 fn main() {
     // let args: Vec<String> = env::args().collect();
@@ -71,9 +38,10 @@ fn main() {
     /*let test2 = vec!["23:00-04:00", "Europe/Berlin"];
     let test3 = vec!["23-4", "ET"];
     let test4 = vec!["11:45pm","4:15am", "US/Alaska"]; */
-    let times = converter::parse_time_range(test1);
-    println!("{:?}",times.list);
+    let times :TimestampRange = timestamp::converter::parse_time_range(&test1);
+    let tz: Tz = test1.last().unwrap().as_str().parse().unwrap();
 
-    //let tz : String = times.pop().unwrap_or(""); 
-
+    let t1 = timestamp_to_local(times.start, tz);
+    let t2 = timestamp_to_local(times.end, tz);
+    println!("{} - {} local time",t1.time(),t2.time());
 }
