@@ -13,6 +13,7 @@ cargo run <startTime> <endTime?> <timezone>
 ```
 
 ## Tests
+Theses tests are hardcoded meaning that they are being compared to the local UTC+9:30
 ```
 cargo test
 ```
