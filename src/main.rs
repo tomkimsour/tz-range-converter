@@ -1,6 +1,4 @@
 #![allow(
-    dead_code,
-    unused_variables,
     clippy::too_many_arguments,
     clippy::unnecessary_wraps
 )]
@@ -26,8 +24,8 @@ fn timestamp_to_local(timestamp : Timestamp, tz : Tz) -> DateTime<Local>{
     if timestamp.meridiem == "pm"{
         hours += 12;
     }
-    let received_dt: DateTime<Tz>= tz.ymd(local_dt.year(), local_dt.month(), local_dt.day()).and_hms(hours, minutes, 0);
-    received_dt.with_timezone(&local_dt.timezone())
+    let received_dt = tz.with_ymd_and_hms(local_dt.year(), local_dt.month(), local_dt.day(),hours, minutes, 0);
+    received_dt.unwrap().with_timezone(&local_dt.timezone())
 }
 
 fn main() {
